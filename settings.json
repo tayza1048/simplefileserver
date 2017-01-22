@@ -1,0 +1,9 @@
+{
+    "hostname": "localhost",
+    "port": "6061",
+    "storageOption": "memory",
+    "s3": {
+        "key": "{Your key}",
+        "bucket": "{Your bucket name}"
+    }
+}
