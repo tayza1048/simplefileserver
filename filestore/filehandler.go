@@ -1,10 +1,16 @@
 package filestore
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
+
+	"github.com/nfnt/resize"
 )
 
 type storage interface {
@@ -22,52 +28,12 @@ const (
 
 var (
 	// StorageOption represents setting for storage option
-	StorageOption int
-	// memory        = make(map[string]map[string]multipart.File)
+	StorageOption  int
 	currentStorage storage
 )
 
 // Upload handles file upload based on the storage option
-// func Upload(username string, filename string, file multipart.File) string {
-// 	log.Printf("Handling file upload from user %s for file %s ...\n", username, filename)
-
-// 	var path string
-
-// 	switch StorageOption {
-// 	case StorageOptionMemory:
-// 		addToMemory(username, filename, file)
-// 		log.Println("Done storing file in memory.")
-// 		path = fmt.Sprintf("%s/%s", username, filename)
-// 	case StorageOptionFileSystem:
-// 		log.Println("Done storing file in file system.")
-// 	}
-
-// 	return path
-// }
-
-// // Retrieve returns the data uploaded by users
-// func Retrieve(username string, filename string) ([]byte, error) {
-// 	if StorageOption == StorageOptionMemory {
-// 		file := memory[username][filename]
-// 		if file != nil {
-// 			return ioutil.ReadAll(file)
-// 		}
-// 	}
-
-// 	return nil, errors.New("no such file")
-// }
-
-// func addToMemory(username string, filename string, file multipart.File) {
-// 	mm, ok := memory[username]
-// 	if !ok {
-// 		mm = make(map[string]multipart.File)
-// 		memory[username] = mm
-// 	}
-// 	mm[filename] = file
-// }
-
-// Upload handles file upload based on the storage option
-func Upload(username string, filename string, file *multipart.File) (string, error) {
+func Upload(username string, filename string, file *multipart.File, width uint, height uint) (string, error) {
 	log.Printf("Handling file upload from user %s for file %s ...\n", username, filename)
 
 	// path
@@ -78,6 +44,9 @@ func Upload(username string, filename string, file *multipart.File) (string, err
 	if err != nil {
 		return path, err
 	}
+
+	// resize image if required
+	data = resizeImage(data[0:], width, height)
 
 	saveErr := getStorage().save(username, filename, data)
 	return fmt.Sprintf("%s/%s", username, filename), saveErr
@@ -103,4 +72,29 @@ func getStorage() storage {
 	}
 
 	return currentStorage
+}
+
+func resizeImage(data []byte, width uint, height uint) []byte {
+	if image, format, err := image.Decode(bytes.NewReader(data)); err == nil && width > 0 && height > 0 {
+		isJpeg := format == "jpeg"
+		isPng := format == "png"
+
+		if isJpeg || isPng {
+			resizeImage := resize.Resize(width, height, image, resize.Lanczos3)
+			buf := new(bytes.Buffer)
+
+			if isJpeg {
+				if err := jpeg.Encode(buf, resizeImage, nil); err == nil {
+					log.Println("jpeg resized")
+					return buf.Bytes()
+				}
+			} else {
+				if err := png.Encode(buf, resizeImage); err == nil {
+					log.Println("png resized")
+					return buf.Bytes()
+				}
+			}
+		}
+	}
+	return data
 }
