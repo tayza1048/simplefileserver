@@ -4,6 +4,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/tayza1048/simplefileserver/filestore"
 )
@@ -14,11 +16,7 @@ var (
 )
 
 func handleDefault(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Please call /hello")
-}
-
-func handleHello(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Hello. I am a simple file server.\n")
+	io.WriteString(w, "I am a simple file server.\n")
 }
 
 func upload(w http.ResponseWriter, req *http.Request) {
@@ -45,6 +43,26 @@ func upload(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func download(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodGet {
+		path := strings.Split(req.URL.Path, "/")
+		if len(path) == 3 {
+			log.Printf("Handling download from user %s for file %s ...\n", path[1], path[2])
+			data, err := filestore.Retrieve(path[1], path[2])
+			if err != nil {
+				http.NotFound(w, req)
+				return
+			}
+
+			w.Header().Set("Content-Type", http.DetectContentType(data))
+			w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+			w.Write(data)
+		}
+	} else {
+		http.Error(w, "Please use Get requests to retrieve files.", http.StatusInternalServerError)
+	}
+}
+
 func main() {
 	loadSettings()
 	initializeHandlers()
@@ -63,7 +81,6 @@ func loadSettings() {
 }
 
 func initializeHandlers() {
-	http.HandleFunc("/", handleDefault)
-	http.HandleFunc("/hello", handleHello)
+	http.HandleFunc("/", download)
 	http.HandleFunc("/upload", upload)
 }

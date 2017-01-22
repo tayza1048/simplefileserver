@@ -23,12 +23,15 @@ var (
 func Upload(username string, filename string, file multipart.File) string {
 	log.Printf("Handling file upload from user: %s ...\n", username)
 
+	var path string
+
 	if StorageOption == StorageOptionMemory {
 		addToMemory(username, filename, file)
-		return fmt.Sprintf("%s/%s", username, filename)
+		log.Println("Done storing file in memory.")
+		path = fmt.Sprintf("%s/%s", username, filename)
 	}
 
-	return ""
+	return path
 }
 
 // Retrieve returns the data uploaded by users
