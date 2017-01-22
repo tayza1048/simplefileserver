@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,6 +15,11 @@ import (
 var (
 	hostname string
 	port     string
+)
+
+const (
+	defaultHostname = "localhost"
+	defaultPort     = "6061"
 )
 
 func handleDefault(w http.ResponseWriter, req *http.Request) {
@@ -36,8 +43,11 @@ func upload(w http.ResponseWriter, req *http.Request) {
 		}
 		defer file.Close()
 
-		log.Print(handler.Header)
-		io.WriteString(w, "http://"+hostname+":"+port+"/"+filestore.Upload(username[0], handler.Filename, file))
+		path, err := filestore.Upload(username[0], handler.Filename, &file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		io.WriteString(w, "http://"+hostname+":"+port+"/"+path)
 	} else {
 		http.Error(w, "Please use POST or PUT requests to upload files.", http.StatusInternalServerError)
 	}
@@ -75,9 +85,49 @@ func main() {
 }
 
 func loadSettings() {
-	hostname = "localhost"
-	port = "6061"
-	filestore.StorageOption = filestore.StorageOptionMemory
+	file, err := os.Open("settings.json")
+	if err != nil {
+		hostname = defaultPort
+		port = defaultPort
+		filestore.StorageOption = filestore.StorageOptionMemory
+	} else {
+		defer file.Close()
+
+		dec := json.NewDecoder(file)
+		for {
+			var v map[string]interface{}
+			if err := dec.Decode(&v); err != nil {
+				log.Println(err)
+				return
+			}
+			for k, value := range v {
+				switch k {
+				case "hostname":
+					if str, ok := value.(string); ok {
+						hostname = str
+					}
+				case "port":
+					if str, ok := value.(string); ok {
+						port = str
+					}
+				case "storageOption":
+					var storage string
+					if str, ok := value.(string); ok {
+						storage = str
+						switch storage {
+						case "memory":
+							filestore.StorageOption = filestore.StorageOptionMemory
+						case "filesystem":
+							filestore.StorageOption = filestore.StorageOptionFileSystem
+						default:
+							log.Fatal("Invalid settings")
+						}
+					}
+
+				}
+			}
+		}
+	}
 }
 
 func initializeHandlers() {
