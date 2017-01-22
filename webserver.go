@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -131,6 +132,9 @@ func upload(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		io.WriteString(w, "http://"+hostname+":"+port+"/"+path)
+	} else if req.Method == http.MethodGet {
+		t, _ := template.ParseFiles("templates/upload.gtl")
+		t.Execute(w, nil)
 	} else {
 		http.Error(w, "Please use POST or PUT requests to upload files.", http.StatusInternalServerError)
 	}
