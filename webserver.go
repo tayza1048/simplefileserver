@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +32,7 @@ func main() {
 	loadSettings()
 
 	// start web server
-	err := http.ListenAndServe(":6061", nil)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -40,7 +41,7 @@ func main() {
 func loadSettings() {
 	file, err := os.Open("settings.json")
 	if err != nil {
-		hostname = defaultPort
+		hostname = defaultHostname
 		port = defaultPort
 		filestore.StorageOption = filestore.StorageOptionMemory
 	} else {
@@ -51,7 +52,7 @@ func loadSettings() {
 			var v map[string]interface{}
 			if err := dec.Decode(&v); err != nil {
 				log.Println(err)
-				return
+				break
 			}
 			for k, value := range v {
 				switch k {
@@ -72,14 +73,25 @@ func loadSettings() {
 							filestore.StorageOption = filestore.StorageOptionMemory
 						case "filesystem":
 							filestore.StorageOption = filestore.StorageOptionFileSystem
+						case "s3":
+							filestore.StorageOption = filestore.StorageOptionS3
 						default:
 							log.Fatal("Invalid settings")
 						}
 					}
-
 				}
 			}
 		}
+	}
+
+	// Load s3 settings
+	if filestore.StorageOption == filestore.StorageOptionS3 {
+		s3fileContent, err := ioutil.ReadFile("settings_s3.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		json.Unmarshal(s3fileContent, &filestore.S3Config)
 	}
 }
 
@@ -94,6 +106,8 @@ func handleDefault(w http.ResponseWriter, req *http.Request) {
 
 func upload(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		req.ParseMultipartForm(32 << 20)
 
 		username := req.Form["username"]
@@ -112,7 +126,7 @@ func upload(w http.ResponseWriter, req *http.Request) {
 		width := parseParamInt(req.Form["width"])
 		height := parseParamInt(req.Form["height"])
 
-		path, err := filestore.Upload(username[0], handler.Filename, &file, width, height)
+		path, err := filestore.Upload(username[0], handler.Filename, &file, handler.Header.Get("Content-Type"), width, height)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

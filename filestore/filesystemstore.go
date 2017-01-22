@@ -9,7 +9,7 @@ import (
 type filesystemstore struct {
 }
 
-func (fs filesystemstore) save(username string, filename string, data []byte) error {
+func (fs filesystemstore) save(username string, filename string, data []byte, contentType string) error {
 	if _, err := os.Stat(username); err != nil {
 		os.Mkdir(username, 0700)
 	}

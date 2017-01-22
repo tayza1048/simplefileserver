@@ -9,7 +9,7 @@ type memorystore struct {
 	memory map[string]map[string][]byte
 }
 
-func (ms memorystore) save(username string, filename string, data []byte) error {
+func (ms memorystore) save(username string, filename string, data []byte, contentType string) error {
 	mm, ok := ms.memory[username]
 	if !ok {
 		mm = make(map[string][]byte)

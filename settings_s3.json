@@ -1,0 +1,5 @@
+{
+    "accessKeyID": "{Your access key ID}",
+    "secretKey": "{Your secret access key}",
+    "bucket": "{Your bucket name}"
+}

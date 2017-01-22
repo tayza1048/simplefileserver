@@ -13,8 +13,15 @@ import (
 	"github.com/nfnt/resize"
 )
 
+// S3Settings for s3 configuration
+type S3Settings struct {
+	AccessKeyID string
+	SecretKey   string
+	Bucket      string
+}
+
 type storage interface {
-	save(username string, filename string, data []byte) error
+	save(username string, filename string, data []byte, contentType string) error
 	retrieve(username string, filename string) ([]byte, error)
 }
 
@@ -24,16 +31,23 @@ const (
 
 	// StorageOptionFileSystem means files will be kept inside file system
 	StorageOptionFileSystem = 2
+
+	// StorageOptionS3 means storage will be on Amazon S3
+	StorageOptionS3 = 3
 )
 
 var (
 	// StorageOption represents setting for storage option
-	StorageOption  int
+	StorageOption int
+
+	// S3Config is the configurations for s3
+	S3Config S3Settings
+
 	currentStorage storage
 )
 
 // Upload handles file upload based on the storage option
-func Upload(username string, filename string, file *multipart.File, width uint, height uint) (string, error) {
+func Upload(username string, filename string, file *multipart.File, contentType string, width uint, height uint) (string, error) {
 	log.Printf("Handling file upload from user %s for file %s ...\n", username, filename)
 
 	// path
@@ -48,7 +62,7 @@ func Upload(username string, filename string, file *multipart.File, width uint, 
 	// resize image if required
 	data = resizeImage(data[0:], width, height)
 
-	saveErr := getStorage().save(username, filename, data)
+	saveErr := getStorage().save(username, filename, data, contentType)
 	return fmt.Sprintf("%s/%s", username, filename), saveErr
 }
 
@@ -68,6 +82,12 @@ func getStorage() storage {
 	case StorageOptionFileSystem:
 		if currentStorage == nil {
 			currentStorage = filesystemstore{}
+		}
+	case StorageOptionS3:
+		if currentStorage == nil {
+			currentStorage = s3store{
+				config: &S3Config,
+			}
 		}
 	}
 
