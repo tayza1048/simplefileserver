@@ -19,7 +19,7 @@ $ go run webserver.go
 
 An alternative approach is to run "go install github.com/tayza1048/simplefileserver" and run the binary output file. But it also requires copying templates and setting files as an extra step.
 
-Once the server starts, please go to http://{hostname}:{port}/upload and try out the functionalities.
+Once the server starts, please go to http://{hostname}:{port}/upload and try out the functionalities. Calling the URL will load a simple form to upload images and also resize them. You may also use some tools like Postman to call the http://{hostname}:{port}/upload API via HTTP POST or PUT. The API will return the URL for viewing / downloading the uploaded items.
 
 ### Settings
 Modify settings.json file to configure server hostname and port. For storage options, please use one of the following:
