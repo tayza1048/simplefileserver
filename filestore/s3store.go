@@ -13,7 +13,7 @@ type s3store struct {
 	config *S3Settings
 }
 
-func (ss s3store) save(username string, filename string, data []byte, contentType string) error {
+func (ss *s3store) save(username string, filename string, data []byte, contentType string) error {
 	svc, err := ss.configureService()
 	if err != nil {
 		return err
@@ -31,7 +31,7 @@ func (ss s3store) save(username string, filename string, data []byte, contentTyp
 	return err
 }
 
-func (ss s3store) retrieve(username string, filename string) ([]byte, error) {
+func (ss *s3store) retrieve(username string, filename string) ([]byte, error) {
 	svc, err := ss.configureService()
 	if err != nil {
 		return nil, err

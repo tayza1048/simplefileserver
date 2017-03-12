@@ -9,7 +9,7 @@ type memorystore struct {
 	memory map[string]map[string][]byte
 }
 
-func (ms memorystore) save(username string, filename string, data []byte, contentType string) error {
+func (ms *memorystore) save(username string, filename string, data []byte, contentType string) error {
 	mm, ok := ms.memory[username]
 	if !ok {
 		mm = make(map[string][]byte)
@@ -21,7 +21,7 @@ func (ms memorystore) save(username string, filename string, data []byte, conten
 	return nil
 }
 
-func (ms memorystore) retrieve(username string, filename string) ([]byte, error) {
+func (ms *memorystore) retrieve(username string, filename string) ([]byte, error) {
 	if StorageOption == StorageOptionMemory {
 		if data, ok := ms.memory[username][filename]; ok {
 			return data, nil
