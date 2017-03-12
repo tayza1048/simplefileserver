@@ -2,17 +2,15 @@ package filestore
 
 import "testing"
 
-func TestMemoryStoreSaveRetrieve(t *testing.T) {
-	StorageOption = StorageOptionMemory
+func TestFileSystemStoreSaveRetrieve(t *testing.T) {
+	StorageOption = StorageOptionFileSystem
 
 	username := "tayza"
 	filename := "cat.txt"
 	content := []byte("Here is a string....")
 	contentType := "text/plain"
 
-	storage := &memorystore{
-		memory: make(map[string]map[string][]byte),
-	}
+	storage := filesystemstore{}
 
 	err := storage.save(username, filename, content, contentType)
 	if err != nil {
@@ -21,8 +19,10 @@ func TestMemoryStoreSaveRetrieve(t *testing.T) {
 
 	data, err := storage.retrieve(username, filename)
 	if err != nil {
+		storage.delete(username, filename)
 		t.Error(err)
 	}
+	storage.delete(username, filename)
 
 	if len(data) != len(content) {
 		t.Error("Expected same length", len(data))

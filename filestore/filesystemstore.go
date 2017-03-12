@@ -34,3 +34,11 @@ func (fs filesystemstore) retrieve(username string, filename string) ([]byte, er
 
 	return data, nil
 }
+
+func (fs filesystemstore) delete(username string, filename string) error {
+	if err := os.RemoveAll(username); err != nil {
+		return err
+	}
+
+	return nil
+}
