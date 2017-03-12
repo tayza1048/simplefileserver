@@ -75,17 +75,17 @@ func getStorage() storage {
 	switch StorageOption {
 	case StorageOptionMemory:
 		if currentStorage == nil {
-			currentStorage = memorystore{
+			currentStorage = &memorystore{
 				memory: make(map[string]map[string][]byte),
 			}
 		}
 	case StorageOptionFileSystem:
 		if currentStorage == nil {
-			currentStorage = filesystemstore{}
+			currentStorage = &filesystemstore{}
 		}
 	case StorageOptionS3:
 		if currentStorage == nil {
-			currentStorage = s3store{
+			currentStorage = &s3store{
 				config: &S3Config,
 			}
 		}

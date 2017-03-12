@@ -9,7 +9,7 @@ import (
 type filesystemstore struct {
 }
 
-func (fs filesystemstore) save(username string, filename string, data []byte, contentType string) error {
+func (fs *filesystemstore) save(username string, filename string, data []byte, contentType string) error {
 	if _, err := os.Stat(username); err != nil {
 		os.Mkdir(username, 0700)
 	}
@@ -26,11 +26,19 @@ func (fs filesystemstore) save(username string, filename string, data []byte, co
 	return nil
 }
 
-func (fs filesystemstore) retrieve(username string, filename string) ([]byte, error) {
+func (fs *filesystemstore) retrieve(username string, filename string) ([]byte, error) {
 	data, err := ioutil.ReadFile(username + "/" + filename)
 	if err != nil {
 		return nil, err
 	}
 
 	return data, nil
+}
+
+func (fs *filesystemstore) delete(username string, filename string) error {
+	if err := os.RemoveAll(username); err != nil {
+		return err
+	}
+
+	return nil
 }
